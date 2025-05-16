@@ -32,8 +32,40 @@ export function generateSimpleHash(str) {
 
 // Generate GitHub OG image URL
 export function getGitHubOGImageUrl(repo) {
-  const hash = generateSimpleHash(`${repo.id}-${repo.updated_at}`)
-  return `https://opengraph.githubassets.com/${hash}/${repo.owner.login}/${repo.name}`
+  // Return a placeholder if no repo provided
+  if (!repo || typeof repo !== 'object') {
+    return `https://opengraph.githubassets.com/placeholder/project`;
+  }
+
+  try {
+    const hash = generateSimpleHash(`${repo.id || ''}-${repo.updated_at || Date.now()}`);
+    
+    // If repo doesn't have an owner property or owner doesn't have login property,
+    // use a default or extract from repoUrl if available
+    let ownerLogin = 'unknown';
+    
+    // Safely access owner.login - fixes the "Cannot read properties of undefined (reading 'login')" error
+    if (repo.owner && repo.owner.login) {
+      ownerLogin = repo.owner.login;
+    } else if (repo.repoUrl) {
+      // Try to extract owner from repoUrl (e.g., https://github.com/owner/repo)
+      const match = repo.repoUrl?.match(/github\.com\/([^\/]+)/);
+      ownerLogin = match && match[1] ? match[1] : 'unknown';
+    } else if (repo.html_url) {
+      // Also try from html_url if available
+      const match = repo.html_url?.match(/github\.com\/([^\/]+)/);
+      ownerLogin = match && match[1] ? match[1] : 'unknown';
+    }
+    
+    // Make sure repo.name exists
+    const repoName = repo.name || 'project';
+    
+    return `https://opengraph.githubassets.com/${hash}/${ownerLogin}/${repoName}`;
+  } catch (error) {
+    console.warn("Error generating GitHub OG image URL", error);
+    // Return a default image or placeholder
+    return `https://opengraph.githubassets.com/placeholder/${repo.name || 'project'}`;
+  }
 }
 
 // Get color for programming language

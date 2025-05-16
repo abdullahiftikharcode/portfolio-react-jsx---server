@@ -20,6 +20,8 @@ import { motion, useInView, useAnimation } from "framer-motion"
 import ScrollReveal from "../components/ScrollReveal"
 import { staggerContainer } from "../hooks/useScrollAnimation"
 import ParticleBackground from "../components/ui/particle-background"
+import { useEducation } from "../hooks/useEducation"
+import { useSkills } from "../hooks/useSkills"
 
 export default function AboutPage() {
   const theme = useTheme()
@@ -27,36 +29,24 @@ export default function AboutPage() {
   const isInView = useInView(skillsRef, { once: true, amount: 0.2, rootMargin: "-50px" })
   const controls = useAnimation()
   const [skillValues, setSkillValues] = useState({})
+  
+  // Get education and skills data from API
+  const { education, loading: educationLoading, error: educationError } = useEducation()
+  const { skills: apiSkills, loading: skillsLoading, error: skillsError } = useSkills()
 
-  // Start animation when skill bars come into view
-  useEffect(() => {
-    if (isInView) {
-      controls.start("visible")
-      
-      // Animate skill bars with a staggered effect
-      const timeoutIds = codingSkills.map((skill, index) => {
-        return setTimeout(() => {
-          setSkillValues(prev => ({
-            ...prev,
-            [skill.name]: skill.value
-          }))
-        }, index * 150)
-      })
-      
-      return () => {
-        timeoutIds.forEach(id => clearTimeout(id))
-      }
-    }
-  }, [isInView, controls])
-
-  const skills = [
+  // Filter skills by type
+  const cardSkills = apiSkills.filter(skill => !skill.value)
+  const codingSkills = apiSkills.filter(skill => skill.value)
+  
+  // Use local fallback data if API fails
+  const localSkills = [
     { name: "FIGMA", icon: "figma" },
     { name: "UNITY", icon: "unity" },
     { name: "APP DEVELOPMENT", icon: "android" },
     { name: "Database Administration", icon: "database" },
   ]
 
-  const codingSkills = [
+  const localCodingSkills = [
     { name: "HTML", value: 80 },
     { name: "CSS", value: 60 },
     { name: "JavaScript", value: 55 },
@@ -67,7 +57,7 @@ export default function AboutPage() {
     { name: "SQL", value: 97 },
   ]
 
-  const education = [
+  const localEducation = [
     {
       institution: "INFORMATION TECHNOLOGY UNIVERSITY",
       qualification: "BS-Computer Science",
@@ -87,6 +77,34 @@ export default function AboutPage() {
       score: "92.36%",
     },
   ]
+
+  // Start animation when skill bars come into view
+  useEffect(() => {
+    if (isInView) {
+      controls.start("visible")
+      
+      // Animate skill bars with a staggered effect
+      const skillsToAnimate = skillsError ? localCodingSkills : codingSkills
+      
+      const timeoutIds = skillsToAnimate.map((skill, index) => {
+        return setTimeout(() => {
+          setSkillValues(prev => ({
+            ...prev,
+            [skill.name]: skill.value
+          }))
+        }, index * 150)
+      })
+      
+      return () => {
+        timeoutIds.forEach(id => clearTimeout(id))
+      }
+    }
+  }, [isInView, controls, codingSkills, skillsError])
+
+  // Determine which data to display
+  const displaySkills = skillsError || skillsLoading ? localSkills : cardSkills
+  const displayCodingSkills = skillsError || skillsLoading ? localCodingSkills : codingSkills
+  const displayEducation = educationError || educationLoading ? localEducation : education
 
   // Add animation class to table rows when they come into view
   useEffect(() => {
@@ -181,7 +199,7 @@ export default function AboutPage() {
               <Grid item xs={12} md={10}>
                 <motion.div variants={staggerContainer} initial="hidden" animate="visible">
                   <Grid container spacing={2}>
-                    {skills.map((skill, index) => (
+                    {displaySkills.map((skill, index) => (
                       <Grid item xs={12} sm={6} md={6} key={index}>
                         <ScrollReveal delay={index * 0.1} direction="scale">
                           <SkillCard name={skill.name} icon={skill.icon} />
@@ -205,7 +223,7 @@ export default function AboutPage() {
               </Grid>
               <Grid item xs={12} md={10}>
                 <Grid container spacing={3}>
-                  {codingSkills.map((skill, index) => (
+                  {displayCodingSkills.map((skill, index) => (
                     <Grid item xs={12} sm={6} key={index}>
                       <ScrollReveal delay={index * 0.1}>
                         <Box sx={{ mb: 2 }}>
@@ -291,19 +309,19 @@ export default function AboutPage() {
                   >
                     <TableHead>
                       <TableRow>
-                        <TableCell>Institution</TableCell>
-                        <TableCell>Qualification</TableCell>
-                        <TableCell>Year</TableCell>
-                        <TableCell>Score</TableCell>
+                        <TableCell>INSTITUTION</TableCell>
+                        <TableCell>QUALIFICATION</TableCell>
+                        <TableCell>YEAR</TableCell>
+                        <TableCell>SCORE</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
-                      {education.map((item, index) => (
+                      {displayEducation.map((edu, index) => (
                         <TableRow key={index}>
-                          <TableCell>{item.institution}</TableCell>
-                          <TableCell>{item.qualification}</TableCell>
-                          <TableCell>{item.year}</TableCell>
-                          <TableCell>{item.score}</TableCell>
+                          <TableCell>{edu.institution}</TableCell>
+                          <TableCell>{edu.qualification}</TableCell>
+                          <TableCell>{edu.year}</TableCell>
+                          <TableCell>{edu.score}</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>

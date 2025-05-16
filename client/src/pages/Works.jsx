@@ -1,5 +1,5 @@
 "use client"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 
 import {
   Box,
@@ -27,21 +27,18 @@ import { motion } from "framer-motion"
 import ScrollReveal from "../components/ScrollReveal"
 import { staggerContainer } from "../hooks/useScrollAnimation"
 import ParticleBackground from "../components/ui/particle-background"
+import { useProjects } from "../hooks/useProjects"
 
 export default function WorksPage() {
   const theme = useTheme()
-  const { repos, loading, error } = useGitHubRepos("abdullahiftikharcode")
+  const { repos, loading: githubLoading, error: githubError } = useGitHubRepos("abdullahiftikharcode")
+  const { projects, loading: projectsLoading, error: projectsError } = useProjects()
 
   // Filter and sort state
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedLanguage, setSelectedLanguage] = useState("all")
   const [sortBy, setSortBy] = useState("newest")
   const [filteredRepos, setFilteredRepos] = useState(repos)
-
-  // Get unique languages from repos
-  const languages = repos
-    ? ["all", ...Array.from(new Set(repos.filter((repo) => repo.language).map((repo) => repo.language)))]
-    : ["all"]
 
   // Fallback data in case the GitHub API fails
   const fallbackProjects = [
@@ -50,68 +47,135 @@ export default function WorksPage() {
       name: "Titan-Factory",
       description: "AI-powered industrial management system that streamlines factory operations",
       repoUrl: "https://github.com/abdullahiftikharcode/Titan-Factory",
+      language: "JavaScript", 
+      html_url: "https://github.com/abdullahiftikharcode/Titan-Factory",
+      updated_at: new Date(),
+      stargazers_count: 5,
+      forks_count: 2
     },
     {
       id: 2,
       name: "Campus-Pulse",
       description: "Robust club and society management app crafted using Java and XML",
       repoUrl: "https://github.com/abdullahiftikharcode/Campus-Pulse",
+      language: "Java",
+      html_url: "https://github.com/abdullahiftikharcode/Campus-Pulse",
+      updated_at: new Date(),
+      stargazers_count: 3,
+      forks_count: 1
     },
     {
       id: 3,
       name: "Bookstore-Management-System",
       description: "Bookstore Management System in Python with a custom-built face verification system",
       repoUrl: "https://github.com/abdullahiftikharcode/Bookstore-Management-System",
+      language: "Python",
+      html_url: "https://github.com/abdullahiftikharcode/Bookstore-Management-System",
+      updated_at: new Date(),
+      stargazers_count: 4,
+      forks_count: 0
     },
     {
       id: 4,
       name: "Chess",
       description: "Chess game in C++ with features like Highlight, Check, Checkmate, Undo and Redo",
       repoUrl: "https://github.com/abdullahiftikharcode/Chess",
+      language: "C++",
+      html_url: "https://github.com/abdullahiftikharcode/Chess",
+      updated_at: new Date(),
+      stargazers_count: 2,
+      forks_count: 1
     },
   ]
 
+  // Combine GitHub repos with database projects when appropriate
+  const allProjects = useMemo(() => {
+    try {
+      // First priority: If database projects exist and are valid, use those
+      if (projects && Array.isArray(projects) && projects.length > 0) {
+        return projects.map(project => ({
+          id: project._id || Math.random().toString(36).substring(7),
+          name: project.name || 'Unnamed Project',
+          description: project.description || 'No description available',
+          language: project.language || null,
+          repoUrl: project.repoUrl || '#',
+          html_url: project.repoUrl || '#',
+          updated_at: project.updated_at || new Date(),
+          stargazers_count: project.stargazers_count || 0,
+          forks_count: project.forks_count || 0
+        }));
+      }
+      
+      // Second priority: If GitHub API worked and returned repos, use those
+      if (repos && Array.isArray(repos) && repos.length > 0 && !githubError) {
+        return repos.map(repo => ({
+          id: repo.id || Math.random().toString(36).substring(7),
+          name: repo.name || 'Unnamed Project',
+          description: repo.description || 'No description available',
+          language: repo.language || null,
+          html_url: repo.html_url || '#',
+          updated_at: repo.updated_at || new Date(),
+          stargazers_count: repo.stargazers_count || 0,
+          forks_count: repo.forks_count || 0
+        }));
+      }
+      
+      // Last resort: Fallback to static projects data
+      console.log("Using fallback projects data");
+      return fallbackProjects;
+    } catch (error) {
+      console.error("Error combining projects:", error);
+      return fallbackProjects;
+    }
+  }, [repos, projects, githubError, projectsError, fallbackProjects]);
+
+  // Get unique languages from repos
+  const languages = useMemo(() => {
+    if (!allProjects || allProjects.length === 0) return ["all"];
+    return ["all", ...Array.from(new Set(allProjects.filter((repo) => repo.language).map((repo) => repo.language)))];
+  }, [allProjects]);
+
   // Filter and sort repos when dependencies change
   useEffect(() => {
-    if (!repos || repos.length === 0) return
+    if (!allProjects || allProjects.length === 0) return;
 
-    let result = [...repos]
+    let result = [...allProjects];
 
     // Filter by search query
     if (searchQuery) {
-      const query = searchQuery.toLowerCase()
+      const query = searchQuery.toLowerCase();
       result = result.filter(
         (repo) =>
           repo.name.toLowerCase().includes(query) ||
           (repo.description && repo.description.toLowerCase().includes(query)),
-      )
+      );
     }
 
     // Filter by language
     if (selectedLanguage !== "all") {
-      result = result.filter((repo) => repo.language === selectedLanguage)
+      result = result.filter((repo) => repo.language === selectedLanguage);
     }
 
     // Sort repos
     result.sort((a, b) => {
       switch (sortBy) {
         case "newest":
-          return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+          return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
         case "oldest":
-          return new Date(a.updated_at).getTime() - new Date(b.updated_at).getTime()
+          return new Date(a.updated_at).getTime() - new Date(b.updated_at).getTime();
         case "stars":
-          return b.stargazers_count - a.stargazers_count
+          return (b.stargazers_count || 0) - (a.stargazers_count || 0);
         case "forks":
-          return b.forks_count - a.forks_count
+          return (b.forks_count || 0) - (a.forks_count || 0);
         case "name":
-          return a.name.localeCompare(b.name)
+          return a.name.localeCompare(b.name);
         default:
-          return 0
+          return 0;
       }
-    })
+    });
 
-    setFilteredRepos(result)
-  }, [repos, searchQuery, selectedLanguage, sortBy])
+    setFilteredRepos(result);
+  }, [allProjects, searchQuery, selectedLanguage, sortBy]);
 
   // Handle filter changes
   const handleSearchChange = (event) => {
@@ -264,7 +328,7 @@ export default function WorksPage() {
 
             {/* Repositories Section */}
             <Box>
-              {loading ? (
+              {githubLoading ? (
                 <Grid container spacing={3}>
                   {[1, 2, 3, 4, 5, 6].map((item) => (
                     <Grid item xs={12} sm={6} md={4} key={item}>
@@ -285,7 +349,7 @@ export default function WorksPage() {
                     </Grid>
                   ))}
                 </Grid>
-              ) : error ? (
+              ) : githubError ? (
                 <Box>
                   <Typography variant="h6" color="error" gutterBottom>
                     Error loading repositories from GitHub

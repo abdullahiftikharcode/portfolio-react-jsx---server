@@ -4,18 +4,15 @@ import { useState, useEffect } from "react"
 import { Box, Card, Typography, Button, useTheme, Skeleton } from "@mui/material"
 import { Star, CallSplit, Code } from "@mui/icons-material"
 import { motion } from "framer-motion"
-import { getGitHubOGImageUrl } from "../../lib/github"
 import Card3D from "../Card3D"
 import { Link } from "react-router-dom"
 
 export default function RepositoryCard({ repo, index }) {
   const theme = useTheme()
-  const [imageLoaded, setImageLoaded] = useState(false)
-  const [imageLoading, setImageLoading] = useState(true)
 
   // Function to format repository name for display
   const formatRepoName = (name) => {
-    return name.replace(/-/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())
+    return name ? name.replace(/-/g, " ").replace(/\b\w/g, (l) => l.toUpperCase()) : "Project";
   }
 
   // Function to get a color based on language
@@ -34,31 +31,24 @@ export default function RepositoryCard({ repo, index }) {
     return colors[language] || "#8257e5" // Default purple color
   }
 
-  // Get OG image URL
-  const ogImageUrl = getGitHubOGImageUrl(repo)
+  // Get background gradient based on language
+  const getBackgroundGradient = () => {
+    const langColor = getLanguageColor(repo.language || "default");
+    return `linear-gradient(135deg, rgba(30, 30, 30, 0.9) 0%, rgba(${hexToRgb(langColor)}, 0.4) 100%)`;
+  };
 
-  // Preload the image
-  useEffect(() => {
-    if (!ogImageUrl) {
-      setImageLoading(false)
-      return
-    }
+  // Convert hex color to RGB
+  const hexToRgb = (hex) => {
+    // Remove # if present
+    hex = hex.replace('#', '');
     
-    const img = new Image()
-    img.src = ogImageUrl
-    img.onload = () => {
-      setImageLoaded(true)
-      setImageLoading(false)
-    }
-    img.onerror = () => {
-      setImageLoading(false)
-    }
+    // Parse the hex values
+    const r = parseInt(hex.substring(0, 2), 16);
+    const g = parseInt(hex.substring(2, 4), 16);
+    const b = parseInt(hex.substring(4, 6), 16);
     
-    return () => {
-      img.onload = null
-      img.onerror = null
-    }
-  }, [ogImageUrl])
+    return `${r}, ${g}, ${b}`;
+  };
 
   // Card animation variants
   const cardVariants = {
@@ -91,44 +81,26 @@ export default function RepositoryCard({ repo, index }) {
             flexDirection: "column",
           }}
         >
-          {/* Repository header with background image */}
+          {/* Repository header with background */}
           <Box
             sx={{
               height: "50%",
               position: "relative",
               overflow: "hidden",
-              backgroundColor: theme.palette.mode === "dark" ? "rgba(30, 30, 30, 0.9)" : "rgba(200, 200, 200, 0.5)",
-              "&::before": imageLoaded ? {
+              background: getBackgroundGradient(),
+              "&::after": {
                 content: '""',
                 position: "absolute",
                 top: 0,
                 left: 0,
                 width: "100%",
                 height: "100%",
-                backgroundImage: `url(${ogImageUrl})`,
-                backgroundSize: "cover",
-                backgroundPosition: "center",
-                filter: "brightness(0.7)",
-              } : {},
+                backgroundImage: "url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCIgdmlld0JveD0iMCAwIDIwIDIwIj48Y2lyY2xlIGN4PSIyIiBjeT0iMiIgcj0iMC41IiBmaWxsPSJyZ2JhKDI1NSwgMjU1LCAyNTUsIDAuMSkiLz48L3N2Zz4=')",
+                backgroundRepeat: "repeat",
+                opacity: 0.2,
+              }
             }}
           >
-            {imageLoading && (
-              <Box sx={{ width: '100%', height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                <Skeleton 
-                  variant="rectangular" 
-                  width="100%" 
-                  height="100%" 
-                  animation="wave"
-                  sx={{ 
-                    bgcolor: theme.palette.mode === "dark" ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
-                    position: 'absolute',
-                    top: 0,
-                    left: 0
-                  }}
-                />
-              </Box>
-            )}
-            
             <Box
               sx={{
                 position: "absolute",
@@ -175,14 +147,14 @@ export default function RepositoryCard({ repo, index }) {
               <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
                 <Star sx={{ fontSize: 12, color: "white" }} />
                 <Typography variant="caption" sx={{ color: "white", fontSize: "0.7rem" }}>
-                  {repo.stargazers_count}
+                  {repo.stargazers_count || 0}
                 </Typography>
               </Box>
 
               <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
                 <CallSplit sx={{ fontSize: 12, color: "white" }} />
                 <Typography variant="caption" sx={{ color: "white", fontSize: "0.7rem" }}>
-                  {repo.forks_count}
+                  {repo.forks_count || 0}
                 </Typography>
               </Box>
             </Box>
@@ -212,7 +184,7 @@ export default function RepositoryCard({ repo, index }) {
               <Button
                 variant="outlined"
                 size="small"
-                href={repo.html_url}
+                href={repo.html_url || repo.repoUrl || '#'}
                 target="_blank"
                 rel="noopener noreferrer"
                 startIcon={<Code sx={{ fontSize: 14 }} />}
@@ -235,7 +207,7 @@ export default function RepositoryCard({ repo, index }) {
                 GitHub
               </Button>
 
-              <Link to={`/projects/${repo.name}`} style={{ textDecoration: "none" }}>
+              <Link to={`/projects/${repo.name || 'project'}`} style={{ textDecoration: "none" }}>
                 <Button
                   variant="outlined"
                   size="small"

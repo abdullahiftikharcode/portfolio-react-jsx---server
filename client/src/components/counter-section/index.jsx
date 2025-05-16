@@ -1,15 +1,25 @@
 "use client"
-import { useState, useEffect } from "react"
-import { Box, Grid, Typography, useTheme } from "@mui/material"
+import { useState, useEffect, useMemo } from "react"
+import { Box, Grid, Typography, useTheme, Skeleton } from "@mui/material"
 import { motion } from "framer-motion"
 import CountUp from "react-countup"
 import { useLanguage } from "../LanguageContext"
 import { useScrollAnimation } from "../../hooks/useScrollAnimation"
+import { useStatistics } from "../../hooks/useStatistics"
 
 export default function CounterSection() {
   const theme = useTheme()
   const [inView, setInView] = useState(false)
   const { t } = useLanguage()
+  const { 
+    statistics, 
+    loading: statsLoading, 
+    error: statsError,
+    totalHours,
+    projectsDone,
+    satisfied,
+    certifications
+  } = useStatistics()
 
   const { ref, controls } = useScrollAnimation({
     threshold: 0.3,
@@ -24,12 +34,13 @@ export default function CounterSection() {
     },
   })
 
-  const stats = [
-    { value: 1500, label: "total_hours" },
-    { value: 50, label: "projects_done" },
-    { value: 40, label: "satisfied" },
-    { value: 10, label: "certifications" },
-  ]
+  // Use the statistics from the API if available, or fall back to defaults
+  const stats = useMemo(() => [
+    { value: totalHours || 1500, label: "total_hours" },
+    { value: projectsDone || 50, label: "projects_done" },
+    { value: satisfied || 40, label: "satisfied" },
+    { value: certifications || 10, label: "certifications" },
+  ], [totalHours, projectsDone, satisfied, certifications]);
 
   const itemVariants = {
     hidden: { opacity: 0, y: 20 },
@@ -83,32 +94,43 @@ export default function CounterSection() {
           {stats.map((stat, index) => (
             <Grid item xs={6} md={3} key={index}>
               <motion.div variants={itemVariants}>
-                <Typography
-                  variant="h2"
-                  component="div"
-                  fontWeight="bold"
-                  sx={{
-                    mb: 1,
-                    fontSize: { xs: "2.5rem", md: "3.5rem" },
-                    background:
-                      theme.palette.mode === "dark"
-                        ? "linear-gradient(45deg, #ffffff 30%, #aaaaaa 90%)"
-                        : "linear-gradient(45deg, #000000 30%, #555555 90%)",
-                    WebkitBackgroundClip: "text",
-                    WebkitTextFillColor: "transparent",
-                  }}
-                >
-                  {inView ? <CountUp start={0} end={stat.value} duration={2.5} separator="," /> : "0"}
-                </Typography>
-                <Typography
-                  variant="body1"
-                  sx={{
-                    color: theme.palette.mode === "dark" ? "grey.400" : "grey.700",
-                    fontWeight: "medium",
-                  }}
-                >
-                  {t(stat.label)}
-                </Typography>
+                {statsLoading ? (
+                  <Skeleton 
+                    variant="rectangular" 
+                    width="100%" 
+                    height={80} 
+                    sx={{ bgcolor: 'rgba(255, 255, 255, 0.1)', borderRadius: 1 }}
+                  />
+                ) : (
+                  <>
+                    <Typography
+                      variant="h2"
+                      component="div"
+                      fontWeight="bold"
+                      sx={{
+                        mb: 1,
+                        fontSize: { xs: "2.5rem", md: "3.5rem" },
+                        background:
+                          theme.palette.mode === "dark"
+                            ? "linear-gradient(45deg, #ffffff 30%, #aaaaaa 90%)"
+                            : "linear-gradient(45deg, #000000 30%, #555555 90%)",
+                        WebkitBackgroundClip: "text",
+                        WebkitTextFillColor: "transparent",
+                      }}
+                    >
+                      {inView ? <CountUp start={0} end={stat.value} duration={2.5} separator="," /> : "0"}
+                    </Typography>
+                    <Typography
+                      variant="body1"
+                      sx={{
+                        color: theme.palette.mode === "dark" ? "grey.400" : "grey.700",
+                        fontWeight: "medium",
+                      }}
+                    >
+                      {t(stat.label)}
+                    </Typography>
+                  </>
+                )}
               </motion.div>
             </Grid>
           ))}
