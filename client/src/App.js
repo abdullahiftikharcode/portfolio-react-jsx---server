@@ -8,6 +8,7 @@ const Home = React.lazy(() => import('./pages/Home'));
 const About = React.lazy(() => import('./pages/About'));
 const Works = React.lazy(() => import('./pages/Works'));
 const HireMe = React.lazy(() => import('./pages/HireMe'));
+const Admin = React.lazy(() => import('./pages/Admin'));
 const NotFound = React.lazy(() => import('./pages/NotFound'));
 
 // Loading component
@@ -27,6 +28,7 @@ function App() {
           <Route path="/about" element={<About />} />
           <Route path="/works" element={<Works />} />
           <Route path="/hire-me" element={<HireMe />} />
+          <Route path="/admin" element={<Admin />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>
