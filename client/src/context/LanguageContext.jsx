@@ -9,6 +9,7 @@ const translations = {
     about: "ABOUT ME",
     works: "WORKS",
     hire: "HIRE ME",
+    admin: "ADMIN",
     available: "AVAILABLE FOR WORK",
     developer: "A Web/App Developer From Lahore, Pakistan",
     journey:
@@ -26,6 +27,7 @@ const translations = {
     about: "SOBRE MÍ",
     works: "TRABAJOS",
     hire: "CONTRÁTAME",
+    admin: "ADMIN",
     available: "DISPONIBLE PARA TRABAJAR",
     developer: "Un Desarrollador Web/App De Lahore, Pakistán",
     journey:
@@ -43,6 +45,7 @@ const translations = {
     about: "À PROPOS",
     works: "TRAVAUX",
     hire: "ENGAGEZ-MOI",
+    admin: "ADMIN",
     available: "DISPONIBLE POUR TRAVAILLER",
     developer: "Un Développeur Web/App De Lahore, Pakistan",
     journey:
@@ -60,6 +63,7 @@ const translations = {
     about: "关于我",
     works: "作品",
     hire: "雇用我",
+    admin: "管理",
     available: "可接受工作",
     developer: "来自巴基斯坦拉合尔的网页/应用开发者",
     journey: "我的开发之旅始于对艺术和技术的热爱，这促使我追求一个能够无缝融合这些兴趣的职业。",
@@ -76,6 +80,7 @@ const translations = {
     about: "عني",
     works: "أعمالي",
     hire: "وظفني",
+    admin: "الإدارة",
     available: "متاح للعمل",
     developer: "مطور ويب/تطبيقات من لاهور، باكستان",
     journey:

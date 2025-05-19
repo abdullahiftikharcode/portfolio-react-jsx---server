@@ -19,6 +19,7 @@ export default function Header({ activePage, title, toggleSidebar }) {
     { name: "ABOUTME", path: "/about", translationKey: "about" },
     { name: "WORKS", path: "/works", translationKey: "works" },
     { name: "HIRE ME", path: "/hire-me", translationKey: "hire" },
+    { name: "ADMIN", path: "/admin", translationKey: "admin" },
   ]
 
   const titleVariants = {
