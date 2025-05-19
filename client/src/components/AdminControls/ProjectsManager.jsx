@@ -27,8 +27,6 @@ import {
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
 import { useProjects } from '../../hooks/useProjects';
 
 export default function ProjectsManager() {
@@ -48,8 +46,8 @@ export default function ProjectsManager() {
     githubUrl: '',
     featured: false,
     images: [],
-    startDate: null,
-    endDate: null
+    startDate: '',
+    endDate: ''
   });
   const [techInput, setTechInput] = useState('');
   const [imageInput, setImageInput] = useState('');
@@ -65,10 +63,6 @@ export default function ProjectsManager() {
       ...prev,
       [name]: type === 'checkbox' ? checked : value
     }));
-  };
-
-  const handleDateChange = (name, date) => {
-    setFormData(prev => ({ ...prev, [name]: date }));
   };
 
   const addTechnology = () => {
@@ -117,8 +111,8 @@ export default function ProjectsManager() {
       githubUrl: '',
       featured: false,
       images: [],
-      startDate: null,
-      endDate: null
+      startDate: '',
+      endDate: ''
     });
     setTechInput('');
     setImageInput('');
@@ -139,8 +133,8 @@ export default function ProjectsManager() {
         githubUrl: project.githubUrl || '',
         featured: project.featured || false,
         images: project.images || [],
-        startDate: project.startDate ? new Date(project.startDate) : null,
-        endDate: project.endDate ? new Date(project.endDate) : null
+        startDate: project.startDate ? project.startDate.substring(0, 10) : '',
+        endDate: project.endDate ? project.endDate.substring(0, 10) : ''
       });
     } else {
       resetForm();
@@ -158,8 +152,14 @@ export default function ProjectsManager() {
     
     try {
       let result;
+      const projectData = { ...formData };
+      
+      // Convert empty dates to null
+      if (!projectData.startDate) projectData.startDate = null;
+      if (!projectData.endDate) projectData.endDate = null;
+      
       if (currentProject) {
-        result = await updateProject(currentProject._id, formData);
+        result = await updateProject(currentProject._id, projectData);
         if (result.success) {
           setSnackbar({
             open: true,
@@ -168,7 +168,7 @@ export default function ProjectsManager() {
           });
         }
       } else {
-        result = await createProject(formData);
+        result = await createProject(projectData);
         if (result.success) {
           setSnackbar({
             open: true,
@@ -421,23 +421,27 @@ export default function ProjectsManager() {
                 label="Featured Project"
               />
               
-              <LocalizationProvider dateAdapter={AdapterDateFns}>
-                <Box sx={{ display: 'flex', gap: 2 }}>
-                  <DatePicker
-                    label="Start Date"
-                    value={formData.startDate}
-                    onChange={(date) => handleDateChange('startDate', date)}
-                    renderInput={(params) => <TextField {...params} fullWidth />}
-                  />
-                  
-                  <DatePicker
-                    label="End Date"
-                    value={formData.endDate}
-                    onChange={(date) => handleDateChange('endDate', date)}
-                    renderInput={(params) => <TextField {...params} fullWidth />}
-                  />
-                </Box>
-              </LocalizationProvider>
+              <Box sx={{ display: 'flex', gap: 2 }}>
+                <TextField
+                  fullWidth
+                  label="Start Date"
+                  name="startDate"
+                  type="date"
+                  value={formData.startDate}
+                  onChange={handleChange}
+                  InputLabelProps={{ shrink: true }}
+                />
+                
+                <TextField
+                  fullWidth
+                  label="End Date"
+                  name="endDate"
+                  type="date"
+                  value={formData.endDate}
+                  onChange={handleChange}
+                  InputLabelProps={{ shrink: true }}
+                />
+              </Box>
             </Box>
           </DialogContent>
           <DialogActions>
